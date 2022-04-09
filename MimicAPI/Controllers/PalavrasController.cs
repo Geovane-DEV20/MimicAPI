@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MimicAPI.Database;
 using MimicAPI.Helpers;
 using MimicAPI.Models;
+using MimicAPI.Repositories.Contracts;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
@@ -12,10 +13,10 @@ namespace MimicAPI.Controllers
     [Route("api/palavras")]
     public class PalavrasController : ControllerBase
     {
-        private readonly MimicContext _banco;
-        public PalavrasController(MimicContext banco)
+        private readonly IPalavraRepository _repository;
+        public PalavrasController(IPalavraRepository repository)
         {
-            _banco = banco;
+            _repository = repository;
         }
 
         //api/palavras?data=2019-05-05
@@ -24,11 +25,11 @@ namespace MimicAPI.Controllers
         [HttpGet]
         public ActionResult ObterTodas([FromQuery] PalavraUrlQuery query)
         {
-
+            var item = _repository.Obter(query);
 
             var paginacao = new Paginacao();
 
-            if (query.PagNumero > paginacao.TotalPaginas)
+            if (query.PagNumero > item.paginacao.TotalPaginas)
             {
                 return NotFound();
             }
@@ -45,19 +46,20 @@ namespace MimicAPI.Controllers
         public ActionResult Obter(int id)
         {
 
-            var obj = _banco.Palavras.AsNoTracking().FirstOrDefault(a => a.Id == id);
+            var obj = _repository.Obter(id);
 
             if (obj == null) // Caso o objeto não tenha no banco de dados
             {
                 return NotFound();
             }
-            return Ok();
+            return Ok(obj);
         }
 
         [Route("")]
         [HttpPost]
         public ActionResult Cadastrar([FromBody] Palavra palavra)
         {
+            _repository.Cadastrar(palavra);
 
             return Created($"api/palavras/{palavra.Id}", palavra);
 
@@ -67,39 +69,29 @@ namespace MimicAPI.Controllers
         [HttpPut]
         public ActionResult Atualizar(int id, [FromBody] Palavra palavra)
         {
-            var obj = _banco.Palavras.AsNoTracking().FirstOrDefault(a => a.Id == id);
-
+            var obj = _repository.Obter(id);
             if (obj == null)
             {
                 return NotFound();
             }
 
             palavra.Id = id;
-
+            _repository.Atualizar(palavra);
 
             return Ok();
         }
-
-
 
         [Route("{id}")]
         [HttpDelete]
         public ActionResult Deletar(int id)
         {
-            var palavra = _banco.Palavras.Find(id); //O método Find do EF Core encontra um registro com os valores de chave primária fornecidos .
-
+            var palavra = _repository.Obter(id); //O método Find do EF Core encontra um registro com os valores de chave primária fornecidos .
             if (palavra == null) // Caso o objeto não tenha no banco de dados
             {
                 return NotFound();
             }
+            _repository.Deletar(id);
 
-            if (palavra.Ativo == true)
-            {
-                palavra.Ativo = false;
-            }
-
-            _banco.Palavras.Update(palavra);
-            _banco.SaveChanges();
             return NoContent();
         }
 

@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using MimicAPI.Database;
+using MimicAPI.Repositories;
+using MimicAPI.Repositories.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +36,8 @@ namespace MimicAPI
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
             });
 
+            services.AddMvc();
+            services.AddScoped<IPalavraRepository, PalavraRepository>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -51,7 +55,7 @@ namespace MimicAPI
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MimicAPI v1"));
             }
-            //app.UseMvc();
+            
             app.UseStatusCodePages();
 
             app.UseHttpsRedirection();

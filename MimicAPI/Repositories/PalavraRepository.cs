@@ -31,6 +31,7 @@ namespace MimicAPI.Repositories
         public void Deletar(int id)
         {
             var palavra = Obter(id);
+            palavra.Ativo = false;
             _banco.Palavras.Update(palavra);
             _banco.SaveChanges();
         }
@@ -40,9 +41,9 @@ namespace MimicAPI.Repositories
             return _banco.Palavras.AsNoTracking().FirstOrDefault(a => a.Id == id);
         }
 
-        public List<Palavra> ObterPalavras(PalavraUrlQuery query)
+        public PaginationList<Palavra> ObterPalavras(PalavraUrlQuery query)
         {
-
+            var lista = new PaginationList<Palavra>();  
             var item = _banco.Palavras.AsNoTracking().AsQueryable();
             if (query.Data.HasValue)
             {
@@ -59,11 +60,12 @@ namespace MimicAPI.Repositories
                 paginacao.RegistrosPorPagina = query.PagRegistro.Value;
                 paginacao.TotalRegistros = quantidadeTotalRegistros;
                 paginacao.TotalPaginas = (int)Math.Ceiling((double)quantidadeTotalRegistros / query.PagRegistro.Value); /* 30/10=3pag 21/10=2,1 = 3 */
+                
+                lista.Paginacao = paginacao;
 
             }
-
-            return item.ToList();
-
+            lista.AddRange(item.ToList());
+            return lista;
         }
     }
 }
